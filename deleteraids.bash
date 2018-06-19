@@ -12,4 +12,8 @@ done
 for dev in {b..z}; do
 	mdadm --zero-superblock /dev/xvd$dev 2> /dev/null
 done
+for dev in {1..25}; do
+	mdadm --zero-superblock /dev/nvme${dev}n1 2> /dev/null
+done
+
 echo > /etc/mdadm/mdadm.conf

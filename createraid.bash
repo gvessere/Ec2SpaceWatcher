@@ -6,7 +6,7 @@
 MOUNTPATH=/media/ebs
 FILESYSTEMTYPE=xfs
 # the list difference between xvd[b-z] drives and the drives already used in raids
-
+# c5 instances have different names for their drives (eg. /dev/nvme1n1)
 if [[ "${INSTANCETYPE:0:2}" = "c5" ]];
 then
 	DRIVEPATTERN=/dev/nvme
@@ -35,10 +35,15 @@ if [[ "$HASVG" == "0" ]]; then
 	# create logical volume
 	lvcreate -l 100%FREE -n lv_data vg_data
 	LVPATH=`lvdisplay | grep Path | tr -s " " | cut -d" " -f4`
+	# create filesystem
 	mkfs.$FILESYSTEMTYPE $LVPATH
 	mkdir -p $MOUNTPATH
+	# mount filesystem
 	mount $LVPATH $MOUNTPATH
 	echo "$LVPATH	  $MOUNTPATH	$FILESYSTEMTYPE	 defaults,noatime	0 0" | tee -a /etc/fstab
+	if [[ "${INSTANCETYPE:0:3}" = "cc2" ]]; then
+		touch $MOUNTPATH/ready
+	fi
 else
 	# it exists already so extend it
 	LVPATH=`lvdisplay | grep Path | tr -s " " | cut -d" " -f4`
