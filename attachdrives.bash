@@ -22,7 +22,7 @@ echo "adding $DISKCOUNT drives of size $DISKSIZE"
 for i in `seq 1 $DISKCOUNT`; do
 	VOLUME=`aws ec2 --region $REGION create-volume --tag-specifications "ResourceType='volume',Tags=[{Key=Name,Value=Instance Drive}, {Key=ManagedBy,Value=$INSTANCEID}]" --volume-type gp2 --availability-zone $AZ --encrypted --size $DISKSIZE | jq ".VolumeId" | tr -d '"'`
 
-	if [[ "${INSTANCETYPE:0:2}" = "c5" ]];
+	if [[ -e /dev/nvme0 ]];
 	then
 		alldrives=`echo /dev/nvme{1..25} `
 		actualdrives=`ls /dev/nvme* | tr " " "\n" | sort -k1.10 -n | egrep "nvme[[:digit:]]+$" | egrep -v "nvme0$" `
@@ -36,7 +36,7 @@ for i in `seq 1 $DISKCOUNT`; do
 	# need to reconvert that device back to xvd naming for making the api call
 	DEVICEXV=$DEVICE
 
-	if [[ "${INSTANCETYPE:0:2}" = "c5" ]];
+	if [[ -e /dev/nvme0 ]];
 	then
 		let drive=97+${DEVICE:9}
 		DEVICEXV=/dev/xvd$( chr $drive )

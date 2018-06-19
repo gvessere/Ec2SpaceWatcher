@@ -11,8 +11,8 @@ MDDRIVES=$( cat /proc/mdstat | grep md | wc -l )
 let COL=1+$MDDRIVES
 DISKSIZE=`echo $DISKSIZES | cut -d" " -f$COL`
 
-if [[ ("$MDDRIVES" = "0")  && ("${INSTANCETYPE:0:3}" = "cc2") ]]; then
-    echo "skip adding EBS drives for cc2 the first time around, gonna use instance store"
+if [[ ("$MDDRIVES" = "0")  && (-e /dev/xvdb) ]]; then
+    echo "skip adding EBS drives this first time around, gonna use instance store"
 else
     ./attachdrives.bash $DISKSIZE $DISKCOUNT
 fi
