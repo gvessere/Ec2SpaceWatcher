@@ -34,6 +34,8 @@ for i in `seq 1 $DISKCOUNT`; do
 	DEVICE=`comm --nocheck-order -23 <( echo $alldrives | tr " " "\n") <( echo $actualdrives | tr " " "\n" ) | head -1`
 	
 	# need to reconvert that device back to xvd naming for making the api call
+	DEVICEXV=$DEVICE
+
 	if [[ "${INSTANCETYPE:0:2}" = "c5" ]];
 	then
 		let drive=97+${DEVICE:9}

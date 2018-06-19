@@ -20,7 +20,12 @@ NEWDRIVES=$( comm -23 <( ls $DRIVEPATTERN* | egrep $POSSIBLEDRIVES | sort -k1.10
 NEXTRAID=`comm -23 <( seq -f "/dev/md%1.0f" 0 9 ) <( ls /dev/md* ) | head -1`
 DEVICECOUNT=$( echo $NEWDRIVES | wc -w )
 
-mdadm --create --verbose $NEXTRAID --chunk=256 --level=0 --name=$( echo Scratch$NEXTRAID | tr -d "/" ) --raid-devices=$DEVICECOUNT $NEWDRIVES
+for DRIVE in $NEWDRIVES;
+do
+	umount $DRIVE 2> /dev/null
+done
+
+yes | mdadm --create --verbose $NEXTRAID --chunk=256 --level=0 --name=$( echo Scratch$NEXTRAID | tr -d "/" ) --raid-devices=$DEVICECOUNT $NEWDRIVES
 mdadm --detail --brief $NEXTRAID | sudo tee -a /etc/mdadm/mdadm.conf
 update-initramfs -u
 
