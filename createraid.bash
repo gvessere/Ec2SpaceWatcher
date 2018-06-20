@@ -23,7 +23,11 @@ DEVICECOUNT=$( echo $NEWDRIVES | wc -w )
 for DRIVE in $NEWDRIVES;
 do
 	umount $DRIVE 2> /dev/null
+	dd if=/dev/zero of=$DRIVE bs=4096 count=1024 2> /dev/null
 done
+
+partprobe
+
 
 yes | mdadm --create --verbose $NEXTRAID --chunk=256 --level=0 --name=$( echo Scratch$NEXTRAID | tr -d "/" ) --raid-devices=$DEVICECOUNT $NEWDRIVES
 mdadm --detail --brief $NEXTRAID | sudo tee -a /etc/mdadm/mdadm.conf
@@ -46,6 +50,13 @@ if [[ "$HASVG" == "0" ]]; then
 	# mount filesystem
 	mount $LVPATH $MOUNTPATH
 	echo "$LVPATH	  $MOUNTPATH	$FILESYSTEMTYPE	 defaults,noatime	0 0" | tee -a /etc/fstab
+
+	if ! grep -q "$MOUNTPATH" /proc/mounts; then
+        	echo "***"
+        	echo "*** Failed to mount /media/ebs. Shutting down. "
+        	echo "***"
+        	shutdown now
+    	fi
 else
 	# it exists already so extend it
 	LVPATH=`lvdisplay | grep Path | tr -s " " | cut -d" " -f4`
