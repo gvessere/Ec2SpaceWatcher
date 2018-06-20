@@ -47,6 +47,9 @@ for i in `seq 1 $DISKCOUNT`; do
 	aws ec2 --region $REGION attach-volume --volume-id $VOLUME --instance-id $INSTANCEID --device $DEVICEXV
 	waitforstatus $VOLUME in-use
 	waitfordevice $DEVICE
+
+	# now make sure the drives delete on termination
+	aws ec2 --region $REGION modify-instance-attribute --instance-id $INSTANCEID --block-device-mappings DeviceName=$DEVICEXV,Ebs={DeleteOnTermination=true}
 done
 
 sleep 5
