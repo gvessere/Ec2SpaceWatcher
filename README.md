@@ -4,7 +4,25 @@ Ec2SpaceWatcher scans the available space on your ec2 instances and dynamically 
 
 #### Quick Start:
 
-1. Create an IAM instance profile that allows the instance create, list, attach and delete volumes.
+1. Create an IAM instance profile that allows the instance create, attach volumes, modify instance attributes, create tags.
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateVolume",
+                "ec2:AttachVolume",
+                "ec2:ModifyInstanceAttribute",
+                "ec2:CreateTags",
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
 2. Launch instance with profile, make sure to attach instance store drives if you plan on using them for your first array.
 
 3. Clone this repo

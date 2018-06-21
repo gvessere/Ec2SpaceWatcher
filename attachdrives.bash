@@ -13,15 +13,41 @@ function waitfordevice()
 	echo
 }
 
+function attachdrive()
+{
+	DEVICE=$1
+	XVDEVICE=$2
+	VOLUME=$3
+
+	echo Adding device $DEVICE
+	attachedtest=1
+	until [[ $attachedtest -eq 0 ]]; do
+		attachedtest=`aws ec2 --region $REGION attach-volume --volume-id $VOLUME --instance-id $INSTANCEID --device $XVDEVICE 2>&1 | grep -q VolumeInUse; echo $?`
+		sleep .5
+	done
+	
+	aws ec2 --region $REGION modify-instance-attribute --instance-id $INSTANCEID --block-device-mappings DeviceName=$XVDEVICE,Ebs={DeleteOnTermination=true}
+
+	waitfordevice $DEVICE
+}
+
 DISKCOUNT=${2:-6}
 TOTALSIZE=${1:-333}
 DISKSIZE=$((TOTALSIZE/DISKCOUNT))
 
 echo "adding $DISKCOUNT drives of size $DISKSIZE"
 
-for i in `seq 1 $DISKCOUNT`; do
-	VOLUME=`aws ec2 --region $REGION create-volume --tag-specifications "ResourceType='volume',Tags=[{Key=Name,Value=Instance Drive}, {Key=ManagedBy,Value=$INSTANCEID}]" --volume-type gp2 --availability-zone $AZ --encrypted --size $DISKSIZE | jq ".VolumeId" | tr -d '"'`
+TMP=`mktemp -up /tmp`
+mkdir -p $TMP
 
+export REGION INSTANCEID AZ DISKSIZE TMP
+
+# create volumes
+seq 1 $DISKCOUNT | xargs -I{} -P 6 bash -c "aws ec2 --region $REGION create-volume --volume-type gp2 --availability-zone $AZ --encrypted --size $DISKSIZE | jq \".VolumeId\" | tr -d '\"' > $TMP/{}"
+
+aws --region $REGION ec2 create-tags --resources `cat $TMP/* | tr "\n" " "` --tags Key=Name,Value="Instance Drive" Key=ManagedBy,Value=$INSTANCEID 
+
+for VOLUME in `cat $TMP/*`; do
 	if [[ -e /dev/nvme0 ]];
 	then
 		alldrives=`echo /dev/nvme{1..25} `
@@ -42,14 +68,9 @@ for i in `seq 1 $DISKCOUNT`; do
 		DEVICEXV=/dev/xvd$( chr $drive )
 	fi
 
-	echo Adding device $DEVICE
-	waitforstatus $VOLUME available
-	aws ec2 --region $REGION attach-volume --volume-id $VOLUME --instance-id $INSTANCEID --device $DEVICEXV
-	waitforstatus $VOLUME in-use
-	waitfordevice $DEVICE
-
-	# now make sure the drives delete on termination
-	aws ec2 --region $REGION modify-instance-attribute --instance-id $INSTANCEID --block-device-mappings DeviceName=$DEVICEXV,Ebs={DeleteOnTermination=true}
+	attachdrive $DEVICE $DEVICEXV $VOLUME
 done
+
+rm -Rf $TMP
 
 sleep 5
