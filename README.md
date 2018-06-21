@@ -34,16 +34,6 @@ apt install awscli
 
 your instance will now be able to dynamically regrow its /media/ebs partition
 
-#### Cleaning up before shutting down
-
-Since we are creating and attaching the EBS ourselves, we must also do some clean-up before shutting down, or the ebs volumes will lay around in your ec2 account.
-
-Run the following commands:
-```
-./deleteraids.bash
-./detachdrives.bash
-```
-
 #### lvme, ebs, and instance store drives
 
 On instance store instances the instance local drives will be used first, make sure to attach all the instance store drives on launch.
