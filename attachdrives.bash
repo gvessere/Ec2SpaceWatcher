@@ -13,11 +13,16 @@ function waitfordevice()
 	echo
 }
 
-function attachdrive()
+function attachvolume()
 {
 	DEVICE=$1
-	XVDEVICE=$2
-	VOLUME=$3
+	VOLUME=$2
+	XVDEVICE=$DEVICE
+	if [[ $DEVICE = *"nvme"* ]];
+	then
+		let drive=97+${DEVICE:9}
+		XVDEVICE=/dev/xvd$( chr $drive )
+	fi  
 
 	echo Adding device $DEVICE
 	attachedtest=1
@@ -41,35 +46,27 @@ TMP=`mktemp -up /tmp`
 mkdir -p $TMP
 
 export REGION INSTANCEID AZ DISKSIZE TMP
+export -f attachvolume waitfordevice
 
 # create volumes
 seq 1 $DISKCOUNT | xargs -I{} -P 6 bash -c "aws ec2 --region $REGION create-volume --volume-type gp2 --availability-zone $AZ --encrypted --size $DISKSIZE | jq \".VolumeId\" | tr -d '\"' > $TMP/{}"
 
 aws --region $REGION ec2 create-tags --resources `cat $TMP/* | tr "\n" " "` --tags Key=Name,Value="Instance Drive" Key=ManagedBy,Value=$INSTANCEID 
 
-for VOLUME in `cat $TMP/*`; do
-	if [[ -e /dev/nvme0 ]];
-	then
-		alldrives=`echo /dev/nvme{1..25} `
-		actualdrives=`ls /dev/nvme* | tr " " "\n" | sort -k1.10 -n | egrep "nvme[[:digit:]]+$" | egrep -v "nvme0$" `
-	else
-		alldrives=`echo /dev/xvd{b..z}`
-		actualdrives=`ls /dev/xvd* | tr " " "\n" | grep -v "xvda"`
-	fi
+if [[ -e /dev/nvme0 ]];
+then
+	alldrives=`echo /dev/nvme{1..25}`
+	actualdrives=`ls /dev/nvme* | tr " " "\n" | sort -k1.10 -n | egrep "nvme[[:digit:]]+$" | egrep -v "nvme0$" `
+else
+	alldrives=`echo /dev/xvd{b..z}`
+	actualdrives=`ls /dev/xvd* | tr " " "\n" | grep -v "xvda"`
+fi
 
-	DEVICE=`comm --nocheck-order -23 <( echo $alldrives | tr " " "\n") <( echo $actualdrives | tr " " "\n" ) | head -1`
-	
-	# need to reconvert that device back to xvd naming for making the api call
-	DEVICEXV=$DEVICE
+NEWVOLUMECOUNT=`cat $TMP/* | wc -l`
+NEXTDEVICES=`comm --nocheck-order -23 <( echo $alldrives | tr " " "\n") <( echo $actualdrives | tr " " "\n" ) | head -$NEWVOLUMECOUNT`
 
-	if [[ -e /dev/nvme0 ]];
-	then
-		let drive=97+${DEVICE:9}
-		DEVICEXV=/dev/xvd$( chr $drive )
-	fi
-
-	attachdrive $DEVICE $DEVICEXV $VOLUME
-done
+paste <( echo $NEXTDEVICES | tr "\n" " " | tr " " "\n" ) <( cat $TMP/* ) > $TMP/devicevol
+cat $TMP/devicevol | xargs -d'\n' -P6 -n2 -I{} bash -c "attachvolume {}"
 
 rm -Rf $TMP
 

@@ -11,36 +11,41 @@ if [[ -e /dev/nvme0 ]];
 then
 	DRIVEPATTERN=/dev/nvme
 	POSSIBLEDRIVES="nvme[1-9][0-9]*n1$" # this excludes nvme0
-else
+elif [[ -e /dev/xvdb ]];
+then
 	DRIVEPATTERN=/dev/xvd
-	POSSIBLEDRIVES="xvd[b-z]$"
+        POSSIBLEDRIVES="xvd[b-z]$"
+else
+	DRIVEPATTERN=/dev/sd
+        POSSIBLEDRIVES="sd[b-z]$" 
 fi
-NEWDRIVES=$( comm -23 <( ls $DRIVEPATTERN* | egrep $POSSIBLEDRIVES | sort -k1.10 -n ) <( for array in `ls /dev/md* 2> /dev/null`; do mdadm --detail $array; done | grep $DRIVEPATTERN | tr -s " " | cut -d" " -f8 ) | sort -k1.10 -n | tr "\n" " " )
+
+INUSE_MD=$( for array in `ls /dev/md* 2> /dev/null`; do mdadm --detail $array; done | grep $DRIVEPATTERN | tr -s " " | cut -d" " -f8 | tr "\n" " " )
+INUSE_LV=`vgdisplay -v | grep "PV Name" | tr -s " " | cut -d " " -f4`
+
+NEWDRIVES=$( comm -23 <( ls $DRIVEPATTERN* | egrep $POSSIBLEDRIVES | sort -k1.10 -n ) <( echo $INUSE_LV $INUSE_MD | tr " " "\n" | sort | uniq | sort -k1.10 -n ) | tr "\n" " " )
 
 NEXTRAID=`comm -23 <( seq -f "/dev/md%1.0f" 0 9 ) <( ls /dev/md* ) | head -1`
 DEVICECOUNT=$( echo $NEWDRIVES | wc -w )
 
-for DRIVE in $NEWDRIVES;
-do
-	umount $DRIVE 2> /dev/null
-	dd if=/dev/zero of=$DRIVE bs=4096 count=1024 2> /dev/null
-done
+if [[ $DEVICECOUNT -gt 1 ]]; then
+	yes | mdadm --create --verbose $NEXTRAID --chunk=256 --level=0 --name=$( echo $NEXTRAID | tr -d "/" ) --raid-devices=$DEVICECOUNT $NEWDRIVES
+	mdadm --detail --brief $NEXTRAID | sudo tee -a /etc/mdadm/mdadm.conf
+	update-initramfs -u
+	NEXTDRIVE=$NEXTRAID
+else
+	# should be 1 drive only
+	NEXTDRIVE=$NEWDRIVES
+fi
 
-partprobe
-
-
-yes | mdadm --create --verbose $NEXTRAID --chunk=256 --level=0 --name=$( echo Scratch$NEXTRAID | tr -d "/" ) --raid-devices=$DEVICECOUNT $NEWDRIVES
-mdadm --detail --brief $NEXTRAID | sudo tee -a /etc/mdadm/mdadm.conf
-update-initramfs -u
-
-pvcreate $NEXTRAID
+pvcreate $NEXTDRIVE
 
 HASVG=`vgdisplay | grep "vg_data" | wc -l`
 
 if [[ "$HASVG" == "0" ]]; then
 	# this should be done once only
 	# create volume group
-	vgcreate vg_data $NEXTRAID
+	vgcreate vg_data $NEXTDRIVE
 	# create logical volume
 	lvcreate -l 100%FREE -n lv_data vg_data
 	LVPATH=`lvdisplay | grep Path | tr -s " " | cut -d" " -f4`
@@ -60,8 +65,8 @@ if [[ "$HASVG" == "0" ]]; then
 else
 	# it exists already so extend it
 	LVPATH=`lvdisplay | grep Path | tr -s " " | cut -d" " -f4`
-	vgextend vg_data $NEXTRAID
-	lvextend -l 100%VG $LVPATH $NEXTRAID
+	vgextend vg_data $NEXTDRIVE
+	lvextend -l 100%VG $LVPATH $NEXTDRIVE
 	if [[ "$FILESYSTEMTYPE" = "xfs" ]]; then
 		xfs_growfs $LVPATH
 	else
