@@ -25,6 +25,11 @@ INUSE_LV=`vgdisplay -v | grep "PV Name" | tr -s " " | cut -d " " -f4`
 
 NEWDRIVES=$( comm -23 <( ls $DRIVEPATTERN* | egrep $POSSIBLEDRIVES | sort -k1.10 -n ) <( echo $INUSE_LV $INUSE_MD | tr " " "\n" | sort | uniq | sort -k1.10 -n ) | tr "\n" " " )
 
+for DRIVE in $NEWDRIVES;
+do
+	umount $DRIVE 2> /dev/null
+done
+
 NEXTRAID=`comm -23 <( seq -f "/dev/md%1.0f" 0 9 ) <( ls /dev/md* ) | head -1`
 DEVICECOUNT=$( echo $NEWDRIVES | wc -w )
 
