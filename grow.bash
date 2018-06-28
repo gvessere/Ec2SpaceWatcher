@@ -14,16 +14,14 @@ let COL=1+$MDDRIVES
 DISKSIZE=`echo $DISKSIZES | cut -d" " -f$COL`
 
 # if no md drive and at least 2 local drives, then raid those, else add more disks
-if [[ (($LVDISPLAY -eq 0) && ((-e /dev/xvdb && -e /dev/xvdc) || (-e /dev/nvme1n1 && -e /dev/nvme2n1) || (-e /dev/sdb && -e /dev/sdc))) ]]; then
+if [[ (($LVDISPLAY -eq 0) && ((-e /dev/xvdb && -e /dev/xvdc) || (-e /dev/nvme1n1 && -e /dev/nvme2n1))) ]]; then
     echo "skip adding EBS drives this first time around, gonna use instance store"
-elif [[ (($LVDISPLAY -eq 0) && ((-e /dev/xvdb) || (-e /dev/nvme1n1) || (-e /dev/sdb))) ]]; then
+elif [[ (($LVDISPLAY -eq 0) && ((-e /dev/xvdb) || (-e /dev/nvme1n1))) ]]; then
 
     if [[ -e /dev/xvdb ]]; then
         DEVICE=/dev/xvdb
-    elif [[ -e /dev/nvme1n1 ]]; then
-        DEVICE=/dev/nvme1n1
     else
-        DEVICE=/dev/sdb
+        DEVICE=/dev/nvme1n1
     fi
 
     # decrement total disks and recompute total size

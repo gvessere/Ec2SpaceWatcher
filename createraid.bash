@@ -7,23 +7,21 @@ MOUNTPATH=/media/ebs
 FILESYSTEMTYPE=xfs
 # the list difference between xvd[b-z] drives and the drives already used in raids
 # nvm instance (like c5s) have different names for their drives (eg. /dev/nvme1n1)
-if [[ -e /dev/nvme0 ]];
-then
-	DRIVEPATTERN=/dev/nvme
-	POSSIBLEDRIVES="nvme[1-9][0-9]*n1$" # this excludes nvme0
-elif [[ -e /dev/xvdb ]];
-then
-	DRIVEPATTERN=/dev/xvd
-        POSSIBLEDRIVES="xvd[b-z]$"
-else
-	DRIVEPATTERN=/dev/sd
-        POSSIBLEDRIVES="sd[b-z]$" 
-fi
 
-INUSE_MD=$( for array in `ls /dev/md* 2> /dev/null`; do mdadm --detail $array; done | grep $DRIVEPATTERN | tr -s " " | cut -d" " -f8 | tr "\n" " " )
-INUSE_LV=`vgdisplay -v | grep "PV Name" | tr -s " " | cut -d " " -f4`
+# list attached drives
+LIST=	
+DRIVEPATTERN=/dev/nvme
+POSSIBLEDRIVES="nvme[0-9]+n1$"
+LIST="$LIST `ls $DRIVEPATTERN* 2> /dev/null | egrep $POSSIBLEDRIVES`"
 
-NEWDRIVES=$( comm -23 <( ls $DRIVEPATTERN* | egrep $POSSIBLEDRIVES | sort -k1.10 -n ) <( echo $INUSE_LV $INUSE_MD | tr " " "\n" | sort | uniq | sort -k1.10 -n ) | tr "\n" " " )
+DRIVEPATTERN=/dev/xvd
+POSSIBLEDRIVES="xvd[a-z]$"
+LIST="$LIST `ls $DRIVEPATTERN* 2> /dev/null | egrep $POSSIBLEDRIVES`"
+
+INUSE=`lsblk -n --output MOUNTPOINT,KNAME,PKNAME | tr -s " " | cut -d" " -f3 | grep -v "^$" | sort | uniq | sort -k1.10 -n | xargs -I{} echo /dev/{}`
+
+
+NEWDRIVES=$( comm -23 <( echo $LIST | tr " " "\n" | sort -k1.10 -n ) <( echo $INUSE | tr " " "\n" ) | tr "\n" " " )
 
 for DRIVE in $NEWDRIVES;
 do
@@ -55,7 +53,7 @@ if [[ "$HASVG" == "0" ]]; then
 	lvcreate -l 100%FREE -n lv_data vg_data
 	LVPATH=`lvdisplay | grep Path | tr -s " " | cut -d" " -f4`
 	# create filesystem
-	mkfs.$FILESYSTEMTYPE $LVPATH
+	mkfs.$FILESYSTEMTYPE -K $LVPATH
 	mkdir -p $MOUNTPATH
 	# mount filesystem
 	mount $LVPATH $MOUNTPATH
