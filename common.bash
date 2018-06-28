@@ -12,3 +12,4 @@ function chr()
    echo ""
 }
 
+export -f chr

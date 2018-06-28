@@ -20,7 +20,7 @@ elif [[ (($LVDISPLAY -eq 0) && ((-e /dev/xvdb) || (-e /dev/nvme1n1) || (-e /dev/
 
     if [[ -e /dev/xvdb ]]; then
         DEVICE=/dev/xvdb
-    elif [[ -e /dev/nvme1n1 ]];
+    elif [[ -e /dev/nvme1n1 ]]; then
         DEVICE=/dev/nvme1n1
     else
         DEVICE=/dev/sdb

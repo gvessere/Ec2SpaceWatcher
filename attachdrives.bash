@@ -53,7 +53,10 @@ seq 1 $DISKCOUNT | xargs -I{} -P 6 bash -c "aws ec2 --region $REGION create-volu
 
 aws --region $REGION ec2 create-tags --resources `cat $TMP/* | tr "\n" " "` --tags Key=Name,Value="Instance Drive" Key=ManagedBy,Value=$INSTANCEID 
 
-if [[ -e /dev/nvme0 ]];
+# f1 instances -> /dev/xvda + /dev/nvme0n1 -> adding /dev/xvdb results in adding /dev/xvdb
+# c4 instances -> /dev/xvda                -> adding /dev/xvdb results in adding /dev/xvdb
+# c5 instance  -> /dev/nvme0n1             -> adding /dev/xvdb results in adding /dev/nvme1n1
+if [[ -e /dev/nvme0 && ! -e /dev/xvda ]];
 then
 	alldrives=`echo /dev/nvme{1..25}`
 	actualdrives=`ls /dev/nvme* | tr " " "\n" | sort -k1.10 -n | egrep "nvme[[:digit:]]+$" | egrep -v "nvme0$" `
