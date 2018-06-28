@@ -16,7 +16,7 @@ DISKSIZE=`echo $DISKSIZES | cut -d" " -f$COL`
 # if no md drive and at least 2 local drives, then raid those, else add more disks
 if [[ (($LVDISPLAY -eq 0) && ((-e /dev/xvdb && -e /dev/xvdc) || (-e /dev/nvme1n1 && -e /dev/nvme2n1))) ]]; then
     echo "skip adding EBS drives this first time around, gonna use instance store"
-elif [[ (($LVDISPLAY -eq 0) && ( ((-e /dev/xvda) && (-e /dev/nvme0n1)) || ((-e /dev/xvdb) || (-e /dev/nvme0n1)) ) ]]; then
+elif [[ (($LVDISPLAY -eq 0) && ( ((-e /dev/xvda) && (-e /dev/nvme0n1)) || ((-e /dev/xvdb) || (-e /dev/nvme0n1)) )) ]]; then
 # extend a single instance drive to be part of a raid
 # r3.2x  /dev/xvda /dev/xvdb (*)
 # f1.2x  /dev/xvda /dev/nvme0n1 (*)
