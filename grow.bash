@@ -27,7 +27,7 @@ elif [[ (($LVDISPLAY -eq 0) && ( ((-e /dev/xvda) && (-e /dev/nvme0n1)) || ((-e /
     if [[ -e /dev/xvdb ]]; then
         DEVICE=/dev/xvdb
     else
-        DEVICE=/dev/nvme1n1
+        DEVICE=/dev/nvme0n1
     fi
 
     # decrement total disks and recompute total size
