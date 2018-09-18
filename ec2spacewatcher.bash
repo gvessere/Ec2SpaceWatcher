@@ -3,7 +3,7 @@
 function NeedsGrow()
 {
 	THRESHPCT=90
-	let LOWAVAIL_BYTES=30*1024*1024*1024
+	let LOWAVAIL_BYTES=40*1024*1024*1024
 
 	DEVICE=/dev/mapper/vg_data-lv_data
 	USAGEPCT=$( df | grep $DEVICE | tr -s " " | cut -d" " -f5 )

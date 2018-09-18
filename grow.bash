@@ -3,7 +3,7 @@
 . common.bash
 
 # find out the next size to use
-DISKSIZES="100 400 1500 2000"
+DISKSIZES="110 400 1500 2000"
 DISKCOUNT=6
 # find out the next size by which to extend the drives based 
 # on current number of md drives
