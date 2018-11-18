@@ -17,6 +17,12 @@ function attachvolume()
 {
 	DEVICE=$1
 	VOLUME=$2
+	
+	if [[ -z "${DEVICE// }" || -z "${VOLUME// }" ]];
+	then
+		return 0
+	fi
+
 	XVDEVICE=$DEVICE
 	if [[ $DEVICE = *"nvme"* ]];
 	then
