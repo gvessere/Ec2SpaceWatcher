@@ -34,7 +34,6 @@ DEVICECOUNT=$( echo $NEWDRIVES | wc -w )
 if [[ $DEVICECOUNT -gt 1 ]]; then
 	yes | mdadm --create --verbose $NEXTRAID --chunk=256 --level=0 --name=$( echo $NEXTRAID | tr -d "/" ) --raid-devices=$DEVICECOUNT $NEWDRIVES
 	mdadm --detail --brief $NEXTRAID | sudo tee -a /etc/mdadm/mdadm.conf
-	update-initramfs -u
 	NEXTDRIVE=$NEXTRAID
 else
 	# should be 1 drive only
