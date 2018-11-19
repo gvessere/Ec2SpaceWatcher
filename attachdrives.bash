@@ -55,7 +55,7 @@ export REGION INSTANCEID AZ DISKSIZE TMP
 export -f attachvolume waitfordevice
 
 # create volumes
-seq 1 $DISKCOUNT | xargs -I{} -P 6 bash -c "aws ec2 --region $REGION create-volume --volume-type gp2 --availability-zone $AZ --encrypted --size $DISKSIZE --tag-specifications "ResourceType=string,Tags=[{Key=Name,Value=Instance Drive},{Key=ManagedBy,Value=MissionControl},Key=KeepUntil,Value=InstanceLifetime},{Key=InstanceId,Value='$INSTANCEID']"  | jq \".VolumeId\" | tr -d '\"' > $TMP/{}"
+seq 1 $DISKCOUNT | xargs -I{} -P 6 bash -c "aws ec2 --region $REGION create-volume --volume-type gp2 --availability-zone $AZ --encrypted --size $DISKSIZE --tag-specifications 'ResourceType=volume,Tags=[{Key=Name,Value=\"Instance Drive\"},{Key=ManagedBy,Value=MissionControl},{Key=KeepUntil,Value=InstanceLifetime},{Key=InstanceId,Value='$INSTANCEID'}]'  | jq \".VolumeId\" | tr -d '\"' > $TMP/{}"
 
 # f1 instances -> /dev/xvda + /dev/nvme0n1 -> adding /dev/xvdb results in adding /dev/xvdb
 # c4 instances -> /dev/xvda                -> adding /dev/xvdb results in adding /dev/xvdb
