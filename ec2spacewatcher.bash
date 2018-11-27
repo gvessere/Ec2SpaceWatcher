@@ -1,10 +1,12 @@
 #!/bin/bash
 
+. common.bash
+
 function NeedsGrow()
 {
-	THRESHPCT=90
-	let LOWAVAIL_BYTES=40*1024*1024*1024
-
+	THRESHPCT=${SPACEWATCHER_THRESHGB}
+	let LOWAVAIL_BYTES=${SPACEWATCHER_THRESHGB}*1024*1024*1024
+	let MDDRIVESMAX=24/SPACEWATCHER_RAID_DRIVES
 	DEVICE=/dev/mapper/vg_data-lv_data
 	USAGEPCT=$( df | grep $DEVICE | tr -s " " | cut -d" " -f5 )
 	USAGEPCT=${USAGEPCT/\%/}
@@ -13,13 +15,14 @@ function NeedsGrow()
 	AVAIL=${AVAIL:-0}
 	# correct for df units
 	AVAIL=$((AVAIL*1024))
-
-	echo $(((USAGEPCT>THRESHPCT) || (AVAIL<LOWAVAIL_BYTES)))
+	CREATEDMD=`ls /dev/md/* | wc -l`
+	echo $((((USAGEPCT>THRESHPCT) || (AVAIL<LOWAVAIL_BYTES)) && CREATEDMD<MDDRIVESMAX ))
 }
 
 while true; do
 
 if [[ "$( NeedsGrow )" == "1" ]]; then
+	echo "expanding drive"
 	./grow.bash
 fi
 

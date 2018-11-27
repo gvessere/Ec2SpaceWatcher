@@ -3,7 +3,6 @@
 # assembles all loose drives into a raid0 at the next /dev/md{id} available
 . common.bash 
 
-MOUNTPATH=/media/ebs
 FILESYSTEMTYPE=xfs
 # the list difference between xvd[b-z] drives and the drives already used in raids
 # nvm instance (like c5s) have different names for their drives (eg. /dev/nvme1n1)
@@ -60,7 +59,7 @@ if [[ "$HASVG" == "0" ]]; then
 
 	if ! grep -q "$MOUNTPATH" /proc/mounts; then
         	echo "***"
-        	echo "*** Failed to mount /media/ebs. Shutting down. "
+        	echo "*** Failed to mount $MOUNTPATH. Shutting down. "
         	echo "***"
         	shutdown now
     	fi

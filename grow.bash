@@ -2,9 +2,14 @@
 
 . common.bash
 
+# pause all io on mount
+./freeze.bash $MOUNTPATH
+
 # find out the next size to use
-DISKSIZES="110 400 1500 2000"
-DISKCOUNT=6
+DISKSIZES=${SPACEWATCHER_GROWTHSEQUENCE_GB}
+DISKCOUNT=${SPACEWATCHER_RAID_DRIVES}
+
+echo $DISKSIZES
 # find out the next size by which to extend the drives based 
 # on current number of md drives
 MDDRIVES=$( cat /proc/mdstat | grep md | wc -l )
@@ -20,5 +25,16 @@ else
     ./attachdrives.bash $DISKSIZE $DISKCOUNT
 fi
 
+if [ -f ./pause.bash ];
+then
+ ./pause.bash
+fi
+
+./unfreeze.bash $MOUNTPATH
 ./createraid.bash
+
+if [ -f ./unpause.bash ];
+then
+ ./unpause.bash
+fi
 
