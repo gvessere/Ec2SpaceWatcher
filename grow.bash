@@ -2,9 +2,6 @@
 
 . common.bash
 
-# pause all io on mount
-./freeze.bash $MOUNTPATH
-
 # find out the next size to use
 DISKSIZES=${SPACEWATCHER_GROWTHSEQUENCE_GB}
 DISKCOUNT=${SPACEWATCHER_RAID_DRIVES}
@@ -35,8 +32,6 @@ if [ -f ./pause.bash ];
 then
  ./pause.bash
 fi
-
-LVDISPLAY=$( lvdisplay | grep /dev/vg_data/lv_data | wc -l )
 
 if [[ ($LVDISPLAY -gt 0) ]];
 then
