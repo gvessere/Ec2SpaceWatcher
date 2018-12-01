@@ -15,7 +15,7 @@ echo $DISKSIZES
 MDDRIVES=$( cat /proc/mdstat | grep md | wc -l )
 LVDISPLAY=$( lvdisplay | grep /dev/vg_data/lv_data | wc -l )
 
-if [[ ($LVDISPLAY -eq 0) ]];
+if [[ ($LVDISPLAY -gt 0) ]];
 then
 	# pause all io on mount, no pausing on first mount
 	./freeze.bash $MOUNTPATH
