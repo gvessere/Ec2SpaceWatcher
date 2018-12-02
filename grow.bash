@@ -6,7 +6,7 @@
 DISKSIZES=${SPACEWATCHER_GROWTHSEQUENCE_GB}
 DISKCOUNT=${SPACEWATCHER_RAID_DRIVES}
 
-echo $DISKSIZES
+echo Disk Size sequence $DISKSIZES
 # find out the next size by which to extend the drives based 
 # on current number of md drives
 MDDRIVES=$( cat /proc/mdstat | grep md | wc -l )

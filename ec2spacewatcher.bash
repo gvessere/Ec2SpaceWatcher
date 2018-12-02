@@ -15,7 +15,7 @@ function NeedsGrow()
 	AVAIL=${AVAIL:-0}
 	# correct for df units
 	AVAIL=$((AVAIL*1024))
-	CREATEDMD=`ls /dev/md/* | wc -l`
+	CREATEDMD=`ls /dev/md* | grep -v "md/" | wc -l`
 	echo $((((USAGEPCT>THRESHPCT) || (AVAIL<LOWAVAIL_BYTES)) && CREATEDMD<MDDRIVESMAX ))
 }
 
