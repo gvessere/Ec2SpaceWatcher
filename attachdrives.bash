@@ -34,7 +34,7 @@ function attachvolume()
 	attachedtest=1
 	until [[ $attachedtest -eq 0 ]]; do
 		attachedtest=`aws ec2 --region $REGION attach-volume --volume-id $VOLUME --instance-id $INSTANCEID --device $XVDEVICE 2>&1 | grep -q VolumeInUse; echo $?`
-		sleep ${SPACEWATCHER_POLLDELAY_S}
+		sleep $((SPACEWATCHER_POLLDELAY_S+RANDOM%SPACEWATCHER_POLLJITTER_S))
 	done
 	
 	aws ec2 --region $REGION modify-instance-attribute --instance-id $INSTANCEID --block-device-mappings DeviceName=$XVDEVICE,Ebs={DeleteOnTermination=true}
