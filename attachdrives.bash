@@ -29,12 +29,13 @@ function attachvolume()
 		let drive=97+${DEVICE:9}
 		XVDEVICE=/dev/xvd$( chr $drive )
 	fi  
-
+	# delay+jitter to separate create and attach
+	sleep $((SPACEWATCHER_POLL1DELAY_S+RANDOM%SPACEWATCHER_POLL1JITTER_S))
 	echo Adding device $DEVICE
 	attachedtest=1
 	until [[ $attachedtest -eq 0 ]]; do
 		attachedtest=`aws ec2 --region $REGION attach-volume --volume-id $VOLUME --instance-id $INSTANCEID --device $XVDEVICE 2>&1 | grep -q VolumeInUse; echo $?`
-		sleep $((SPACEWATCHER_POLLDELAY_S+RANDOM%SPACEWATCHER_POLLJITTER_S))
+		sleep $((SPACEWATCHER_POLL2DELAY_S+RANDOM%SPACEWATCHER_POLL2JITTER_S))
 	done
 	
 	aws ec2 --region $REGION modify-instance-attribute --instance-id $INSTANCEID --block-device-mappings DeviceName=$XVDEVICE,Ebs={DeleteOnTermination=true}
