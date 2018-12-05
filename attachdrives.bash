@@ -56,7 +56,14 @@ export REGION INSTANCEID AZ DISKSIZE TMP
 export -f attachvolume waitfordevice
 
 # create volumes
-seq 1 $DISKCOUNT | xargs -I{} -P${SPACEWATCHER_PARALLELISM} bash -c "aws ec2 --region $REGION create-volume --volume-type gp2 --availability-zone $AZ --encrypted --size $DISKSIZE --tag-specifications 'ResourceType=volume,Tags=[{Key=Name,Value=\"Instance Drive\"},{Key=ManagedBy,Value=MissionControl},{Key=KeepUntil,Value=InstanceLifetime},{Key=InstanceId,Value='$INSTANCEID'}]'  | jq \".VolumeId\" | tr -d '\"' > $TMP/{}"
+if [[ "${SPACEWATCHER_ENCRYPTDRIVES}" == "yes" ]];
+then
+	ENCRYPTFLAG="--encrypted"
+else
+	ENCRYPTFLAG=""
+fi
+
+seq 1 $DISKCOUNT | xargs -I{} -P${SPACEWATCHER_PARALLELISM} bash -c "aws ec2 --region $REGION create-volume --volume-type gp2 --availability-zone $AZ $ENCRYPTFLAG --size $DISKSIZE --tag-specifications 'ResourceType=volume,Tags=[{Key=Name,Value=\"Instance Drive\"},{Key=ManagedBy,Value=MissionControl},{Key=KeepUntil,Value=InstanceLifetime},{Key=InstanceId,Value='$INSTANCEID'}]'  | jq \".VolumeId\" | tr -d '\"' > $TMP/{}"
 
 # f1 instances -> /dev/xvda + /dev/nvme0n1 -> adding /dev/xvdb results in adding /dev/xvdb
 # c4 instances -> /dev/xvda                -> adding /dev/xvdb results in adding /dev/xvdb
