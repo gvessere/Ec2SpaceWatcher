@@ -28,15 +28,15 @@ else
     ./attachdrives.bash $DISKSIZE $DISKCOUNT
 fi
 
-if [ -f ./pause.bash ];
-then
- ./pause.bash
-fi
-
 if [[ ($LVDISPLAY -gt 0) ]];
 then
         # pause all io on mount, no pausing on first mount
         ./unfreeze.bash $MOUNTPATH
+fi
+
+if [ -f ./pause.bash ];
+then
+ ./pause.bash
 fi
 
 ./createraid.bash
